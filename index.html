@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VisiQuate VMA — Vendor Management Analytics · Live Prototype</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#f4f6f8; --panel:#ffffff; --ink:#0f172a; --muted:#64748b; --line:#e2e8f0;
+    --brand:#0d9488; --brand-d:#0f766e; --brand-l:#ccfbf1; --navy:#0f172a; --navy-2:#1e293b;
+    --green:#16a34a; --amber:#d97706; --red:#dc2626; --blue:#2563eb; --violet:#7c3aed;
+    --shadow:0 1px 2px rgba(15,23,42,.06),0 4px 12px rgba(15,23,42,.05);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45}
+  .app{display:flex;min-height:100vh}
+  /* Sidebar */
+  .sidebar{width:248px;background:var(--navy);color:#cbd5e1;flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+  .brand{padding:18px 18px 14px;border-bottom:1px solid #24334a}
+  .brand .logo{font-weight:800;font-size:16px;color:#fff;letter-spacing:.5px}
+  .brand .logo span{color:var(--brand)}
+  .brand .sub{font-size:11px;color:#94a3b8;margin-top:3px}
+  .badge{display:inline-block;margin-top:9px;font-size:9.5px;font-weight:700;letter-spacing:.6px;background:var(--brand);color:#04201d;padding:3px 7px;border-radius:4px}
+  .badge.syn{background:#334155;color:#e2e8f0;margin-left:5px}
+  .nav-role{padding:14px 14px 6px;font-size:10px;text-transform:uppercase;letter-spacing:.7px;color:#64748b;font-weight:700}
+  .nav a{display:flex;align-items:center;gap:9px;padding:9px 16px;color:#cbd5e1;text-decoration:none;font-size:13px;border-left:3px solid transparent;cursor:pointer}
+  .nav a:hover{background:#182335;color:#fff}
+  .nav a.active{background:#182335;color:#fff;border-left-color:var(--brand)}
+  .nav a .ico{width:16px;text-align:center;opacity:.8}
+  .nav a .ml{margin-left:auto;font-size:8.5px;font-weight:700;background:var(--brand-d);color:#d7fdf6;padding:2px 5px;border-radius:3px}
+  .foot{margin-top:auto;padding:14px 16px;border-top:1px solid #24334a;font-size:10.5px;color:#64748b}
+  /* Main */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{background:var(--panel);border-bottom:1px solid var(--line);padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;position:sticky;top:0;z-index:20}
+  .roles{display:flex;gap:6px;background:#eef2f6;padding:4px;border-radius:9px}
+  .roles button{border:0;background:transparent;padding:7px 13px;border-radius:7px;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:6px}
+  .roles button.active{background:#fff;color:var(--navy);box-shadow:var(--shadow)}
+  .roles button .dot{width:8px;height:8px;border-radius:50%}
+  .filters{display:flex;gap:8px;margin-left:auto;flex-wrap:wrap}
+  select{font-size:12px;padding:6px 26px 6px 10px;border:1px solid var(--line);border-radius:7px;background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%2364748b'/></svg>") no-repeat right 9px center;color:var(--ink);cursor:pointer;-webkit-appearance:none;appearance:none}
+  .content{padding:22px 24px 60px;max-width:1280px;width:100%}
+  .page-head{margin-bottom:18px}
+  .page-head h1{font-size:21px;font-weight:750;letter-spacing:-.2px}
+  .page-head .role-tag{font-size:10.5px;font-weight:700;letter-spacing:.6px;color:var(--brand-d);text-transform:uppercase}
+  .page-head p{color:var(--muted);margin-top:5px;max-width:820px;font-size:13px}
+  /* KPI tiles */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:20px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px;box-shadow:var(--shadow)}
+  .kpi .lbl{font-size:11.5px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:5px}
+  .kpi .val{font-size:26px;font-weight:750;margin-top:7px;letter-spacing:-.5px}
+  .kpi .delta{font-size:11.5px;margin-top:4px;font-weight:600}
+  .up{color:var(--green)} .down{color:var(--red)} .flat{color:var(--muted)}
+  .kpi .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
+  .tag{font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:4px;vertical-align:middle}
+  .tag.av{background:#ede9fe;color:#6d28d9} .tag.src{background:#f1f5f9;color:#475569}
+  /* cards / grid */
+  .grid{display:grid;gap:16px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:2fr 1fr}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+  .card h3{font-size:13.5px;font-weight:700;padding:14px 16px 4px}
+  .card .desc{font-size:11.5px;color:var(--muted);padding:0 16px 12px}
+  .card .body{padding:0 16px 16px}
+  .card.full{margin-bottom:16px}
+  canvas{max-height:290px}
+  /* tables */
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700;padding:9px 12px;border-bottom:1px solid var(--line);background:#f8fafc;position:sticky;top:0}
+  td{padding:9px 12px;border-bottom:1px solid var(--line)}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover{background:#f8fafc}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:20px;white-space:nowrap}
+  .p-green{background:#dcfce7;color:#166534} .p-amber{background:#fef3c7;color:#92400e}
+  .p-red{background:#fee2e2;color:#991b1b} .p-blue{background:#dbeafe;color:#1e40af}
+  .p-gray{background:#f1f5f9;color:#475569} .p-violet{background:#ede9fe;color:#6d28d9}
+  .bar{height:7px;background:#eef2f6;border-radius:20px;overflow:hidden;min-width:70px}
+  .bar>i{display:block;height:100%;border-radius:20px}
+  .money{font-weight:700}
+  .flag{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+  /* alert list */
+  .alert{display:flex;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line);align-items:flex-start}
+  .alert:last-child{border-bottom:0}
+  .alert .sev{width:4px;align-self:stretch;border-radius:4px;flex-shrink:0}
+  .alert .a-body{flex:1}
+  .alert .a-title{font-weight:650;font-size:13px}
+  .alert .a-meta{font-size:11px;color:var(--muted);margin-top:3px}
+  .alert .a-act{font-size:11.5px;color:var(--brand-d);margin-top:5px;font-weight:600}
+  .alert .a-val{font-weight:750;font-size:14px;white-space:nowrap}
+  /* timeline */
+  .tl{position:relative;padding-left:22px}
+  .tl:before{content:"";position:absolute;left:6px;top:4px;bottom:4px;width:2px;background:var(--line)}
+  .tl .ev{position:relative;padding:0 0 16px 0}
+  .tl .ev:before{content:"";position:absolute;left:-19px;top:3px;width:11px;height:11px;border-radius:50%;background:#fff;border:2px solid var(--brand)}
+  .tl .ev.den:before{border-color:var(--red)} .tl .ev.pay:before{border-color:var(--green)}
+  .tl .ev.stall:before{border-color:var(--amber)}
+  .tl .ev .d{font-size:10.5px;color:var(--muted)}
+  .tl .ev .t{font-size:12.5px;font-weight:600;margin-top:1px}
+  .tl .ev .x{font-size:11.5px;color:var(--muted)}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .note{background:#f8fafc;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:8px;padding:12px 14px;font-size:12px}
+  .banner{background:var(--brand-l);border:1px solid #99f6e4;border-radius:10px;padding:11px 15px;font-size:12.5px;color:#134e4a;margin-bottom:16px;display:flex;gap:9px;align-items:center}
+  .legend{font-size:11px;color:var(--muted);padding:10px 16px;background:#f8fafc;border-top:1px solid var(--line);display:flex;gap:16px;flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:5px}
+  h4.sec{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:22px 0 10px;font-weight:700}
+  @media(max-width:1000px){.g2,.g3,.split{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">Visi<span>Quate</span> · VMA</div>
+      <div class="sub">Vendor Management Analytics</div>
+      <div><span class="badge">LIVE PROTOTYPE</span><span class="badge syn">SYNTHETIC DATA</span></div>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="foot">
+      Demo Health System · Draft v1.0<br>Data as of Jul 17, 2026 · nightly ETL 6:00 AM CST<br>Prepared by Ashwini Grisko
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="roles" id="roles"></div>
+      <div class="filters">
+        <select id="f-range"><option>Last 30 days</option><option>MTD</option><option>QTD</option><option>Last 90 days</option><option>Rolling 12 mo</option></select>
+        <select id="f-fac"><option>All facilities</option><option>Main Campus</option><option>North Clinic</option><option>Surgical Center</option></select>
+        <select id="f-vendor"><option>All vendors</option><option>Meridian Recovery</option><option>Coastal AR Partners</option><option>Summit Collections</option><option>Apex Receivables</option></select>
+        <select id="f-fc"><option>All financial classes</option><option>Commercial</option><option>Medicare</option><option>Medicaid</option><option>Self-Pay</option></select>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+/* ---------------- Config: roles, pages ---------------- */
+const ROLES = {
+  exec:{name:"Executive / VP", dot:"#7c3aed", pages:["exec-summary"]},
+  director:{name:"Director", dot:"#2563eb", pages:["vendor-scorecard","placement-strategy","alerts"]},
+  manager:{name:"Manager", dot:"#0d9488", pages:["invoice-validation","inventory-recon"]},
+  analyst:{name:"Analyst", dot:"#d97706", pages:["account-deep-dive"]}
+};
+const PAGES = {
+  "exec-summary":{t:"Executive Summary", ico:"◆", ml:false},
+  "vendor-scorecard":{t:"Vendor Scorecard", ico:"▤", ml:true},
+  "placement-strategy":{t:"Placement Strategy", ico:"◇", ml:true},
+  "alerts":{t:"Alert Command Center", ico:"⚑", ml:false},
+  "invoice-validation":{t:"Invoice Validation", ico:"✓", ml:false},
+  "inventory-recon":{t:"Inventory Reconciliation", ico:"⇄", ml:false},
+  "account-deep-dive":{t:"Account Deep Dive", ico:"⊙", ml:true}
+};
+
+/* ---------------- Synthetic data ---------------- */
+const fmt$ = n => (n<0?"-":"")+"$"+Math.abs(n).toLocaleString();
+const fmtK = n => "$"+(n/1000).toFixed(0)+"K";
+const fmtM = n => "$"+(n/1e6).toFixed(2)+"M";
+const pct = n => n.toFixed(1)+"%";
+
+const VENDORS = [
+  {id:"MER", name:"Meridian Recovery",  fee:"18% contingency",  placed:24800000, recovery:41.2, yield:96.4, ctc:6.1, netYield:35.1, cash:2380000, invRate:97.8, invMatch:94.2, leak:38400, grade:"Strong on complex denials", anomaly:"none"},
+  {id:"CST", name:"Coastal AR Partners",fee:"22% contingency",  placed:18100000, recovery:34.6, yield:88.1, ctc:8.4, netYield:26.2, cash:1410000, invRate:82.3, invMatch:86.7, leak:214600,grade:"Weak on low-balance follow-up", anomaly:"high"},
+  {id:"SUM", name:"Summit Collections", fee:"Hybrid (flat+12%)",placed:12600000, recovery:38.9, yield:92.7, ctc:5.4, netYield:33.5, cash:1090000, invRate:95.1, invMatch:91.4, leak:61200, grade:"Balanced mid-balance commercial", anomaly:"amber"},
+  {id:"APX", name:"Apex Receivables",   fee:"15% contingency",  placed:9400000,  recovery:29.7, yield:79.4, ctc:9.9, netYield:19.8, cash:604000,  invRate:74.6, invMatch:79.1, leak:142900,grade:"High cost, aging low-liquidity", anomaly:"high"}
+];
+const TOT = {
+  placed: VENDORS.reduce((a,v)=>a+v.placed,0),
+  cash: VENDORS.reduce((a,v)=>a+v.cash,0),
+  leak: VENDORS.reduce((a,v)=>a+v.leak,0),
+  invRate: 88.7, invMatch: 89.4
+};
+const BUCKETS = [ // A/R Valuator bond-rating style liquidity
+  {g:"AAA", label:"Highest liquidity", bal:3100000, held:"12% external", flag:"retain"},
+  {g:"AA",  label:"High liquidity",    bal:5400000, held:"31% external", flag:"retain"},
+  {g:"A",   label:"Good liquidity",    bal:9800000, held:"58% external", flag:"ok"},
+  {g:"BBB", label:"Moderate",          bal:14200000,held:"79% external", flag:"ok"},
+  {g:"BB",  label:"Low liquidity",     bal:19600000,held:"88% external", flag:"ok"},
+  {g:"B",   label:"Lowest liquidity",  bal:12800000,held:"91% external", flag:"ok"}
+];
+// vendor performance within each A/R Valuator bucket (recovery %)
+const BUCKET_PERF = {
+  MER:{AAA:52,AA:49,A:44,BBB:40,BB:34,B:26},
+  CST:{AAA:47,AA:42,A:37,BBB:33,BB:28,B:19},
+  SUM:{AAA:50,AA:45,A:41,BBB:37,BB:31,B:23},
+  APX:{AAA:44,AA:39,A:33,BBB:29,BB:23,B:15}
+};
+const ALERTS = [
+  {sev:"red",   type:"Payment without activity", vendor:"Coastal AR Partners", n:47, val:214600, owner:"A. Grisko (Analyst)", due:"Jul 21", act:"Dispute fees — contract requires vendor activity before fee is allowed", ev:"47 invoice lines billed on accounts with no logged vendor touch this cycle"},
+  {sev:"red",   type:"Inventory mismatch", vendor:"Apex Receivables", n:132, val:820000, owner:"J. Reyes (Manager)", due:"Jul 23", act:"Recall / reassign — accounts closed-but-active with vendor", ev:"132 accounts paid or closed internally still active in Apex inventory file"},
+  {sev:"amber", type:"Vendor recovery below expected", vendor:"Apex Receivables", n:0, val:0, owner:"S. Ortega (Director)", due:"Jul 28", act:"Escalate for QBR — recovery 29.7% vs 36% expected for bucket mix", ev:"Recovery rate 6.3 pts below normalized expectation for assigned inventory"},
+  {sev:"red",   type:"Highly liquid account placed externally", vendor:"Coastal AR Partners", n:18, val:412000, owner:"S. Ortega (Director)", due:"Jul 22", act:"Retain internally — AAA/AA liquidity should not be outsourced", ev:"18 AAA/AA-graded accounts ($412K) sitting with vendor at 22% contingency"},
+  {sev:"amber", type:"Payment yield drop", vendor:"Coastal AR Partners", n:0, val:0, owner:"J. Reyes (Manager)", due:"Jul 25", act:"Investigate — yield down 4.2 pts vs 90-day baseline", ev:"Payment yield vs expected fell from 92.3% to 88.1% over trailing 30 days"},
+  {sev:"amber", type:"Duplicate placement", vendor:"Summit Collections", n:9, val:74000, owner:"A. Grisko (Analyst)", due:"Jul 24", act:"Resolve duplicate — accounts placed with two vendors simultaneously", ev:"9 accounts appear in both Summit and Meridian inventory files"},
+  {sev:"amber", type:"Contract SLA breach — no first touch", vendor:"Apex Receivables", n:63, val:290000, owner:"J. Reyes (Manager)", due:"Jul 26", act:"SLA breach notice — first touch beyond 5-day contract window", ev:"63 newly placed accounts with no first touch within contractual SLA"},
+  {sev:"blue",  type:"Contract renewal window", vendor:"Meridian Recovery", n:0, val:0, owner:"S. Ortega (Director)", due:"Aug 15", act:"Review terms — 90-day termination-notice window opens Aug 15", ev:"Meridian contract auto-renews Nov 13 unless notice given by Aug 15"}
+];
+const INV_EXCEPTIONS = [
+  {acct:"HS-4471902", vendor:"Coastal AR Partners", billed:1840, actual:1840, cls:"Payment without activity", note:"Fee billed, no vendor touch logged", fix:"dispute"},
+  {acct:"HS-4468110", vendor:"Apex Receivables",    billed:920,  actual:610,  cls:"Overbill vs collection", note:"Contingency applied to gross, not net collection", fix:"dispute"},
+  {acct:"HS-4472244", vendor:"Coastal AR Partners", billed:2760, actual:0,    cls:"Billed on recalled account", note:"Account recalled Jun 28, fee dated Jul 3", fix:"dispute"},
+  {acct:"HS-4459087", vendor:"Summit Collections",  billed:1450, actual:1450, cls:"Rate mismatch", note:"Billed 14% vs 12% contract hybrid rate", fix:"escalate"},
+  {acct:"HS-4470331", vendor:"Apex Receivables",    billed:640,  actual:640,  cls:"Validated", note:"Matches collection + contract rate", fix:"ok"},
+  {acct:"HS-4461925", vendor:"Meridian Recovery",   billed:3120, actual:3120, cls:"Validated", note:"Matches collection + contract rate", fix:"ok"},
+  {acct:"HS-4473558", vendor:"Coastal AR Partners", billed:1990, actual:1310, cls:"Overbill vs collection", note:"Fee exceeds actual posted payment", fix:"dispute"},
+  {acct:"HS-4457743", vendor:"Summit Collections",  billed:880,  actual:880,  cls:"Validated", note:"Matches collection + contract rate", fix:"ok"}
+];
+const MISMATCH = [
+  {cls:"Closed-but-active", n:132, val:820000, vendor:"Apex Receivables", act:"Recall from vendor"},
+  {cls:"Missing from vendor file", n:74, val:388000, vendor:"Coastal AR Partners", act:"Confirm placement / re-send"},
+  {cls:"Unassigned (in file, not placed)", n:41, val:196000, vendor:"Coastal AR Partners", act:"Investigate assignment"},
+  {cls:"Duplicate placement", n:9, val:74000, vendor:"Summit / Meridian", act:"Resolve duplicate"},
+  {cls:"Recalled-but-worked", n:12, val:63000, vendor:"Apex Receivables", act:"Dispute fees + confirm recall"}
+];
+const TIMELINE = [
+  {type:"", d:"Mar 12, 2026", t:"Account placed with Coastal AR Partners", x:"Balance at placement $4,820 · Commercial · A/R Valuator grade AA"},
+  {type:"", d:"Mar 18, 2026", t:"Vendor first touch logged", x:"Within 5-day SLA · outbound payer call"},
+  {type:"den", d:"Apr 02, 2026", t:"Denial received — CO-197 (auth)", x:"Payer: Regional Commercial · $4,820 at risk"},
+  {type:"pay", d:"Apr 29, 2026", t:"Partial payment posted — $1,310", x:"Attribution: account with vendor at time of payment ✓"},
+  {type:"stall",d:"May 27, 2026", t:"No vendor activity for 28 days", x:"Stall flag — balance $3,510 remaining"},
+  {type:"den", d:"Jun 04, 2026", t:"Vendor invoice line billed — $1,990", x:"⚠ Fee exceeds actual collection ($1,310) — flagged for dispute"},
+  {type:"", d:"Jun 28, 2026", t:"Account recalled to internal team", x:"A/R Valuator AA — should have been retained internally"}
+];
+
+/* ---------------- State ---------------- */
+let state = {role:"exec", page:"exec-summary"};
+let charts = [];
+function clearCharts(){ charts.forEach(c=>c.destroy()); charts=[]; }
+
+/* ---------------- Render shell ---------------- */
+function renderRoles(){
+  const r = document.getElementById("roles");
+  r.innerHTML = Object.entries(ROLES).map(([k,v])=>
+    `<button data-role="${k}" class="${k===state.role?'active':''}"><span class="dot" style="background:${v.dot}"></span>${v.name}</button>`).join("");
+  r.querySelectorAll("button").forEach(b=>b.onclick=()=>{state.role=b.dataset.role;state.page=ROLES[state.role].pages[0];render();});
+}
+function renderNav(){
+  const n = document.getElementById("nav");
+  n.innerHTML = Object.entries(ROLES).map(([rk,rv])=>{
+    const links = rv.pages.map(pk=>{
+      const p=PAGES[pk];
+      return `<a data-page="${pk}" class="${pk===state.page?'active':''}"><span class="ico">${p.ico}</span>${p.t}${p.ml?'<span class="ml">ML</span>':''}</a>`;
+    }).join("");
+    return `<div class="nav-role">${rv.name}</div>${links}`;
+  }).join("");
+  n.querySelectorAll("a").forEach(a=>a.onclick=()=>{
+    state.page=a.dataset.page;
+    for(const [rk,rv] of Object.entries(ROLES)){ if(rv.pages.includes(state.page)){state.role=rk;break;} }
+    render();
+  });
+}
+
+/* ---------------- Helpers ---------------- */
+function head(role, title, desc){
+  return `<div class="page-head"><div class="role-tag">${ROLES[role].name}</div><h1>${title}</h1><p>${desc}</p></div>`;
+}
+function kpi(lbl,val,delta,cls,sub,tag){
+  return `<div class="kpi"><div class="lbl">${lbl}${tag?` <span class="tag ${tag[0]}">${tag[1]}</span>`:''}</div><div class="val">${val}</div>`+
+    (delta?`<div class="delta ${cls}">${delta}</div>`:'')+(sub?`<div class="sub">${sub}</div>`:'')+`</div>`;
+}
+function barCell(v,max,color){ return `<div class="bar"><i style="width:${Math.min(100,v/max*100)}%;background:${color}"></i></div>`; }
+
+/* ---------------- Pages ---------------- */
+function pExecSummary(){
+  return head("exec","Executive Summary",
+    "Are our vendors recouping payment effectively, at an acceptable cost to collect, and invoicing accurately for the accounts they actually hold? Portfolio-wide across all vendors and facilities.")+
+  `<div class="banner">◆ <b>Headline:</b> ${fmt$(TOT.leak)} in vendor fee leakage identified this period across 4 vendors — ${fmt$(214600)} concentrated in Coastal AR Partners (payment-without-activity).</div>
+  <div class="kpis">
+    ${kpi("Total AR placed", fmtM(TOT.placed), "across 4 vendors","flat","3 facilities")}
+    ${kpi("Cash recovered (period)", fmtM(TOT.cash), "▲ 4.1% vs prior","up")}
+    ${kpi("Fee leakage identified", fmt$(TOT.leak), "▼ recover on dispute","down","dollars flagged, not yet recovered")}
+    ${kpi("Invoice validation rate", pct(TOT.invRate), "target ≥85% go-live","up",null)}
+    ${kpi("Inventory match rate", pct(TOT.invMatch), "target ≥90%","amber",null)}
+    ${kpi("Blended net yield", "31.4%", "▲ 0.8 pt","up","recovery net of cost to collect")}
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Cash recovered by vendor — rolling 12 mo</h3><div class="body"><canvas id="c-cash"></canvas></div></div>
+    <div class="card"><h3>Fee leakage by root cause</h3><div class="body"><canvas id="c-leak"></canvas></div></div>
+  </div>
+  <div class="card full" style="margin-top:16px"><h3>Top risks to vendor program value</h3>
+    <table><thead><tr><th>Risk</th><th>Vendor</th><th class="num">$ Impact</th><th>Recommended intervention</th></tr></thead><tbody>
+      <tr><td><span class="flag" style="background:var(--red)"></span>Payment without activity</td><td>Coastal AR Partners</td><td class="num money">${fmt$(214600)}</td><td>Dispute fees — activity required before fee allowed</td></tr>
+      <tr><td><span class="flag" style="background:var(--red)"></span>Closed-but-active inventory</td><td>Apex Receivables</td><td class="num money">${fmt$(820000)}</td><td>Recall 132 accounts paid/closed internally</td></tr>
+      <tr><td><span class="flag" style="background:var(--red)"></span>Liquid AR placed externally</td><td>Coastal AR Partners</td><td class="num money">${fmt$(412000)}</td><td>Retain 18 AAA/AA accounts internally</td></tr>
+      <tr><td><span class="flag" style="background:var(--amber)"></span>Recovery below expected</td><td>Apex Receivables</td><td class="num money">—</td><td>Escalate to QBR — 6.3 pts below normalized</td></tr>
+    </tbody></table>
+    <div class="legend"><span>Scope: VMA measures the vendor relationship — collections, cost, yield, inventory accuracy, invoice integrity. Staff productivity belongs to WPA.</span></div>
+  </div>`;
+}
+function drawExec(){
+  charts.push(new Chart(document.getElementById("c-cash"),{type:"bar",data:{
+    labels:["Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar","Apr","May","Jun","Jul"],
+    datasets:VENDORS.map((v,i)=>({label:v.name,backgroundColor:["#0d9488","#2563eb","#7c3aed","#d97706"][i],
+      data:Array.from({length:12},()=>Math.round(v.cash/12*(0.7+Math.random()*0.6)))}))
+  },options:{responsive:true,plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,ticks:{callback:v=>"$"+v/1000+"K"}}}}}));
+  charts.push(new Chart(document.getElementById("c-leak"),{type:"doughnut",data:{
+    labels:["Payment without activity","Overbill vs collection","Billed on recalled acct","Rate mismatch"],
+    datasets:[{data:[214600,142900,61200,38400],backgroundColor:["#dc2626","#d97706","#7c3aed","#2563eb"]}]
+  },options:{responsive:true,plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}}}}}));
+}
+
+function pVendorScorecard(){
+  const maxCash=Math.max(...VENDORS.map(v=>v.cash));
+  return head("director","Vendor Scorecard (Normalized)",
+    "Compare vendors fairly on collections, cost to collect, and net yield — normalized for account complexity (payer mix, balance band, placement age, A/R Valuator grade) so a vendor holding hard inventory is not penalized against one holding liquid inventory.")+
+  `<div class="banner">▤ <b>Normalized comparison:</b> raw recovery rates are adjusted to a common inventory mix (team mean = 1.0×) before ranking. Touch-based productivity is excluded by design.</div>
+  <div class="card full"><h3>Per-vendor scorecard</h3>
+  <table><thead><tr><th>Vendor</th><th>Fee structure</th><th class="num">Recovery %</th><th class="num">Yield vs exp.</th><th class="num">Cost to collect</th><th class="num">Net yield</th><th class="num">Cash (12mo)</th><th>Strength / weakness</th><th>Signal</th></tr></thead><tbody>
+  ${VENDORS.map(v=>`<tr>
+    <td><b>${v.name}</b></td><td>${v.fee}</td>
+    <td class="num">${pct(v.recovery)}</td>
+    <td class="num">${pct(v.yield)}</td>
+    <td class="num">${pct(v.ctc)}</td>
+    <td class="num"><b>${pct(v.netYield)}</b></td>
+    <td class="num money">${fmtK(v.cash)}</td>
+    <td style="font-size:11.5px;color:var(--muted)">${v.grade}</td>
+    <td><span class="pill ${v.anomaly==='high'?'p-red':v.anomaly==='amber'?'p-amber':'p-green'}">${v.anomaly==='high'?'Below expected':v.anomaly==='amber'?'Watch':'On track'}</span></td>
+  </tr>`).join("")}
+  </tbody></table>
+  <div class="legend"><span><span class="flag" style="background:var(--green)"></span>On track</span><span><span class="flag" style="background:var(--amber)"></span>Watch</span><span><span class="flag" style="background:var(--red)"></span>Below normalized expectation</span></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Net yield vs cost to collect</h3><div class="desc">Higher net yield, lower cost = better vendor economics.</div><div class="body"><canvas id="c-yield"></canvas></div></div>
+    <div class="card"><h3>Recovery rate — normalized vs raw</h3><div class="body"><canvas id="c-norm"></canvas></div></div>
+  </div>`;
+}
+function drawVendorScorecard(){
+  charts.push(new Chart(document.getElementById("c-yield"),{type:"bar",data:{
+    labels:VENDORS.map(v=>v.name.split(" ")[0]),
+    datasets:[{label:"Net yield %",backgroundColor:"#0d9488",data:VENDORS.map(v=>v.netYield)},
+              {label:"Cost to collect %",backgroundColor:"#dc2626",data:VENDORS.map(v=>v.ctc)}]
+  },options:{responsive:true,plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}}},scales:{y:{ticks:{callback:v=>v+"%"}}}}}));
+  charts.push(new Chart(document.getElementById("c-norm"),{type:"bar",data:{
+    labels:VENDORS.map(v=>v.name.split(" ")[0]),
+    datasets:[{label:"Raw recovery %",backgroundColor:"#cbd5e1",data:VENDORS.map(v=>v.recovery)},
+              {label:"Normalized (complexity-adj.)",backgroundColor:"#2563eb",data:VENDORS.map(v=>+(v.recovery+ (v.id==='APX'?4.8:v.id==='CST'?2.1:v.id==='SUM'?-0.6:-2.2)).toFixed(1))}]
+  },options:{responsive:true,plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}}},scales:{y:{ticks:{callback:v=>v+"%"}}}}}));
+}
+
+function pPlacement(){
+  return head("director","Placement Strategy — A/R Valuator",
+    "Use A/R Valuator liquidity scoring (bond-rating-style grades, Apex engine) to decide what to keep in-house vs. outsource, and route account types to the vendors that work them best. VMA informs placement; it does not automate placement or recall.")+
+  `<div class="banner">◇ <b>Retention flag:</b> ${fmt$(412000)} of AAA/AA (high-liquidity) balance is sitting with vendors at contingency rates — strong candidates to retain internally.</div>
+  <div class="card full"><h3>Liquidity buckets — what to keep vs. outsource</h3>
+  <table><thead><tr><th>A/R Valuator grade</th><th>Liquidity</th><th class="num">Balance</th><th>% held externally</th><th>Strategy signal</th></tr></thead><tbody>
+  ${BUCKETS.map(b=>`<tr>
+    <td><span class="pill ${b.flag==='retain'?'p-red':'p-blue'}">${b.g}</span></td>
+    <td>${b.label}</td>
+    <td class="num money">${fmtK(b.bal)}</td>
+    <td>${b.held}</td>
+    <td style="font-size:11.5px">${b.flag==='retain'?'⚠ Retain internally — too liquid to outsource':'Appropriate to outsource'}</td>
+  </tr>`).join("")}
+  </tbody></table></div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>Vendor performance by liquidity bucket</h3><div class="desc">Recovery % per vendor within each grade — shows which vendor to route each account type to.</div><div class="body"><canvas id="c-bucket"></canvas></div></div>
+    <div class="card"><h3>Balance distribution by grade</h3><div class="body"><canvas id="c-dist"></canvas></div></div>
+  </div>`;
+}
+function drawPlacement(){
+  charts.push(new Chart(document.getElementById("c-bucket"),{type:"line",data:{
+    labels:["AAA","AA","A","BBB","BB","B"],
+    datasets:VENDORS.map((v,i)=>({label:v.name.split(" ")[0],borderColor:["#0d9488","#2563eb","#7c3aed","#d97706"][i],backgroundColor:"transparent",tension:.3,
+      data:["AAA","AA","A","BBB","BB","B"].map(g=>BUCKET_PERF[v.id][g])}))
+  },options:{responsive:true,plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:10}}}},scales:{y:{ticks:{callback:v=>v+"%"},title:{display:true,text:"Recovery %"}}}}}));
+  charts.push(new Chart(document.getElementById("c-dist"),{type:"bar",data:{
+    labels:BUCKETS.map(b=>b.g),
+    datasets:[{label:"Balance",backgroundColor:BUCKETS.map(b=>b.flag==='retain'?"#dc2626":"#2563eb"),data:BUCKETS.map(b=>b.bal)}]
+  },options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>"$"+v/1e6+"M"}}}}}));
+}
+
+function pAlerts(){
+  const sevColor={red:"var(--red)",amber:"var(--amber)",blue:"var(--blue)"};
+  return head("director","Alert Command Center",
+    "The prebuilt exception-alert library. Each alert carries a recommended action, owner, due date, impacted accounts, and supporting evidence. Outcomes are tracked to see whether intervention improved cash or resolution.")+
+  `<div class="kpis">
+    ${kpi("Active alerts", "8", "3 high severity","down")}
+    ${kpi("$ at risk / flagged", fmt$(1810600), "across open alerts","flat")}
+    ${kpi("High-severity due ≤7d", "5", "action required","amber")}
+    ${kpi("Resolved this period", "22", "▲ 82% within SLA","up")}
+  </div>
+  <div class="card full">
+    ${ALERTS.map(a=>`<div class="alert"><div class="sev" style="background:${sevColor[a.sev]}"></div>
+      <div class="a-body">
+        <div class="a-title">${a.type} <span class="pill ${a.sev==='red'?'p-red':a.sev==='amber'?'p-amber':'p-blue'}">${a.sev==='red'?'High':a.sev==='amber'?'Medium':'Info'}</span></div>
+        <div class="a-meta">${a.vendor}${a.n?` · ${a.n} accounts`:''} · Owner: ${a.owner} · Due ${a.due}</div>
+        <div class="a-act">→ ${a.act}</div>
+        <div class="a-meta" style="margin-top:4px">Evidence: ${a.ev}</div>
+      </div>
+      <div class="a-val">${a.val?fmt$(a.val):''}</div></div>`).join("")}
+  </div>`;
+}
+
+function pInvoiceValidation(){
+  return head("manager","Invoice Validation",
+    "Every vendor invoice line is automatically compared against actual collections, placement/recall status, contingency terms, and contract bill rate. Passing lines auto-validate; exceptions route here for analyst review. This is an audit — not a list match.")+
+  `<div class="kpis">
+    ${kpi("Invoice validation rate", pct(TOT.invRate), "target ≥85% go-live, ≥95% @90d","up")}
+    ${kpi("Lines auto-validated", "1,842 / 2,077", "88.7% no manual touch","flat")}
+    ${kpi("Open exceptions", "235", "$0.51M in disputed fees","amber")}
+    ${kpi("Fee leakage identified", fmt$(TOT.leak), "recoverable on dispute","down")}
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Validation rate by vendor</h3><div class="body"><canvas id="c-val"></canvas></div></div>
+    <div class="card"><h3>Exception dollars by classification</h3><div class="body"><canvas id="c-exc"></canvas></div></div>
+  </div>
+  <div class="card full" style="margin-top:16px"><h3>Exception review queue</h3><div class="desc">Line items that failed auto-validation, with supporting evidence for approve / dispute / escalate.</div>
+  <table><thead><tr><th>Account</th><th>Vendor</th><th class="num">Billed</th><th class="num">Actual coll.</th><th>Classification</th><th>Evidence</th><th>Action</th></tr></thead><tbody>
+  ${INV_EXCEPTIONS.map(e=>`<tr>
+    <td>${e.acct}</td><td>${e.vendor}</td>
+    <td class="num">${fmt$(e.billed)}</td><td class="num">${fmt$(e.actual)}</td>
+    <td><span class="pill ${e.cls==='Validated'?'p-green':e.cls==='Rate mismatch'?'p-amber':'p-red'}">${e.cls}</span></td>
+    <td style="font-size:11.5px;color:var(--muted)">${e.note}</td>
+    <td><span class="pill ${e.fix==='ok'?'p-green':e.fix==='escalate'?'p-amber':'p-red'}">${e.fix==='ok'?'Auto-validated':e.fix==='escalate'?'Escalate':'Dispute'}</span></td>
+  </tr>`).join("")}
+  </tbody></table></div>`;
+}
+function drawInvoiceValidation(){
+  charts.push(new Chart(document.getElementById("c-val"),{type:"bar",data:{
+    labels:VENDORS.map(v=>v.name.split(" ")[0]),
+    datasets:[{label:"Validation rate %",backgroundColor:VENDORS.map(v=>v.invRate>=95?"#16a34a":v.invRate>=85?"#d97706":"#dc2626"),data:VENDORS.map(v=>v.invRate)}]
+  },options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:60,ticks:{callback:v=>v+"%"}}}}}));
+  charts.push(new Chart(document.getElementById("c-exc"),{type:"bar",data:{
+    labels:["Payment w/o activity","Overbill vs coll.","Billed on recalled","Rate mismatch"],
+    datasets:[{label:"$",backgroundColor:["#dc2626","#d97706","#7c3aed","#2563eb"],data:[214600,142900,61200,38400]}]
+  },options:{indexAxis:"y",responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{callback:v=>"$"+v/1000+"K"}}}}}));
+}
+
+function pInventoryRecon(){
+  const totMis=MISMATCH.reduce((a,m)=>a+m.val,0);
+  return head("manager","Inventory Reconciliation",
+    "On a monthly/bimonthly cycle, each vendor's inventory file is matched against a client-generated inventory file at the same cadence — with the client A/R system (Epic) as the source of truth. Mismatches are classified with a recommended action per account.")+
+  `<div class="kpis">
+    ${kpi("Inventory match rate", pct(TOT.invMatch), "target ≥90% after pass","amber")}
+    ${kpi("Accounts reconciled", "18,204", "across 4 vendor files","flat")}
+    ${kpi("Mismatches flagged", "268", fmt$(totMis)+" exposure","down")}
+    ${kpi("Duplicate placements", "9", "$74K — 2 vendors","amber")}
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Mismatch exposure by classification</h3><div class="body"><canvas id="c-mis"></canvas></div></div>
+    <div class="card"><h3>Match rate by vendor</h3><div class="body"><canvas id="c-match"></canvas></div></div>
+  </div>
+  <div class="card full" style="margin-top:16px"><h3>Mismatch worklist</h3>
+  <table><thead><tr><th>Classification</th><th>Vendor</th><th class="num">Accounts</th><th class="num">$ Exposure</th><th>Recommended action</th></tr></thead><tbody>
+  ${MISMATCH.map(m=>`<tr>
+    <td><b>${m.cls}</b></td><td>${m.vendor}</td>
+    <td class="num">${m.n}</td><td class="num money">${fmt$(m.val)}</td>
+    <td><span class="pill p-blue">${m.act}</span></td>
+  </tr>`).join("")}
+  </tbody></table>
+  <div class="legend"><span>Source of truth: client A/R system (Epic). Vendor and client inventory files delivered at matched cadence.</span></div>
+  </div>`;
+}
+function drawInventoryRecon(){
+  charts.push(new Chart(document.getElementById("c-mis"),{type:"doughnut",data:{
+    labels:MISMATCH.map(m=>m.cls),
+    datasets:[{data:MISMATCH.map(m=>m.val),backgroundColor:["#dc2626","#d97706","#2563eb","#7c3aed","#0d9488"]}]
+  },options:{responsive:true,plugins:{legend:{position:"bottom",labels:{boxWidth:10,font:{size:9.5}}}}}}));
+  charts.push(new Chart(document.getElementById("c-match"),{type:"bar",data:{
+    labels:VENDORS.map(v=>v.name.split(" ")[0]),
+    datasets:[{label:"Match rate %",backgroundColor:VENDORS.map(v=>v.invMatch>=90?"#16a34a":"#d97706"),data:VENDORS.map(v=>v.invMatch)}]
+  },options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{min:70,ticks:{callback:v=>v+"%"}}}}}));
+}
+
+function pAccountDeepDive(){
+  return head("analyst","Account Deep Dive",
+    "Full account timeline with payment attribution — every placement, touch, denial, payment, and invoice line traced back to placement context. Supports multi-vendor and vendor-plus-internal splits. A/R Valuator grade shown for placement context.")+
+  `<div class="kpis">
+    ${kpi("Account", "HS-4471902", "Commercial · Main Campus","flat")}
+    ${kpi("Balance", "$3,510", "of $4,820 at placement","flat")}
+    ${kpi("A/R Valuator grade", "AA", "high liquidity","flat",null,["av","ML"])}
+    ${kpi("Attribution", "Coastal AR Partners", "held at time of payment ✓","flat")}
+  </div>
+  <div class="banner" style="background:#fee2e2;border-color:#fecaca;color:#991b1b">⚠ <b>Fee flag:</b> Vendor invoice line of $1,990 (Jun 04) exceeds actual posted collection of $1,310 — routed to Invoice Exception Review for dispute. Account is AA-graded (high liquidity) and likely should have been retained internally.</div>
+  <div class="split">
+    <div class="card"><h3>Account timeline</h3><div class="body"><div class="tl">
+      ${TIMELINE.map(e=>`<div class="ev ${e.type}"><div class="d">${e.d}</div><div class="t">${e.t}</div><div class="x">${e.x}</div></div>`).join("")}
+    </div></div></div>
+    <div>
+      <div class="card" style="margin-bottom:16px"><h3>Payment attribution</h3><div class="body">
+        <table><tbody>
+        <tr><td>Total collected</td><td class="num money">$1,310</td></tr>
+        <tr><td>Attributed to vendor</td><td class="num">$1,310 (100%)</td></tr>
+        <tr><td>Attributed to internal</td><td class="num">$0</td></tr>
+        <tr><td>Vendor at time of payment</td><td class="num"><span class="pill p-green">Yes</span></td></tr>
+        <tr><td>Contract fee (22%)</td><td class="num">$288</td></tr>
+        <tr><td>Fee billed by vendor</td><td class="num"><span class="pill p-red">$1,990</span></td></tr>
+        </tbody></table>
+      </div></div>
+      <div class="card"><h3>Placement context</h3><div class="body">
+        <div class="note">Placed with Coastal AR Partners on Mar 12 at AA liquidity grade. High-liquidity accounts placed externally are flagged on the Placement Strategy report — this account met the <b>retain-internally</b> criterion. Recalled Jun 28.</div>
+      </div></div>
+    </div>
+  </div>`;
+}
+
+/* ---------------- Master render ---------------- */
+const RENDER = {
+  "exec-summary":{html:pExecSummary,draw:drawExec},
+  "vendor-scorecard":{html:pVendorScorecard,draw:drawVendorScorecard},
+  "placement-strategy":{html:pPlacement,draw:drawPlacement},
+  "alerts":{html:pAlerts,draw:null},
+  "invoice-validation":{html:pInvoiceValidation,draw:drawInvoiceValidation},
+  "inventory-recon":{html:pInventoryRecon,draw:drawInventoryRecon},
+  "account-deep-dive":{html:pAccountDeepDive,draw:null}
+};
+function render(){
+  clearCharts();
+  renderRoles(); renderNav();
+  const r = RENDER[state.page];
+  document.getElementById("content").innerHTML = r.html();
+  if(r.draw) setTimeout(r.draw,10);
+  window.scrollTo(0,0);
+}
+render();
+</script>
+</body>
+</html>
