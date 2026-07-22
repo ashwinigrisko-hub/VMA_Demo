@@ -60,6 +60,8 @@
   .kpi .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
   .tag{font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:4px;vertical-align:middle}
   .tag.av{background:#e6f6ef;color:#059669} .tag.src{background:#f1f5f9;color:#475569}
+  .i{display:inline-block;margin-left:4px;width:13px;height:13px;line-height:13px;text-align:center;font-size:9px;font-weight:800;font-style:normal;text-transform:none;letter-spacing:0;color:#fff;background:var(--muted2);border-radius:50%;cursor:help;vertical-align:middle}
+  th .i{background:#aab2bf}
   /* cards / grid */
   .grid{display:grid;gap:16px}
   .g2{grid-template-columns:1fr 1fr}
@@ -511,11 +513,79 @@ const RENDER = {
   "inventory-recon":{html:pInventoryRecon,draw:drawInventoryRecon},
   "account-deep-dive":{html:pAccountDeepDive,draw:null}
 };
+/* ---------------- Hover info tooltips ---------------- */
+const METRIC_TIPS = {
+  "Total AR placed":"Total open AR balance placed across all vendors. Source: vendor placement files.",
+  "Cash recovered":"Payments posted on vendor-placed accounts during the period. Source: client A/R (Epic).",
+  "Fee leakage identified":"Dollars flagged as overbilled, unsupported, or recoverable-internal by fee validation — recoverable on dispute.",
+  "Invoice validation rate":"% of vendor invoice line items auto-validated without manual intervention. Target ≥85% at go-live, ≥95% at 90 days.",
+  "Inventory match rate":"Matched accounts ÷ total reconciled between the vendor and client inventory files. Target ≥90% after the reconciliation pass.",
+  "Blended net yield":"Recovery rate net of cost to collect, blended across all vendors.",
+  "Active alerts":"Open exception alerts across the vendor portfolio.",
+  "$ at risk":"Total dollar exposure across all open alerts.",
+  "High-severity due":"High-severity alerts with a recommended action due within 7 days.",
+  "Resolved this period":"Alerts resolved this period; badge shows the share closed within SLA.",
+  "Lines auto-validated":"Invoice line items that passed automated validation vs. total lines this cycle.",
+  "Open exceptions":"Invoice lines that failed auto-validation and await analyst review.",
+  "Accounts reconciled":"Total accounts compared across the paired vendor and client inventory files.",
+  "Mismatches flagged":"Accounts classified as missing, unassigned, closed-but-active, duplicate, or recalled-but-worked.",
+  "Duplicate placements":"Accounts appearing in more than one vendor inventory file at the same time.",
+  "A/R Valuator grade":"Bond-rating-style liquidity grade from the A/R Valuator (Apex) engine, run nightly in ETL.",
+  "Attribution":"The vendor the account and its payments are attributed to, per the client's attribution logic.",
+  "Balance":"Current open balance vs. balance at placement.",
+  "Account":"Selected account identifier, financial class, and facility."
+};
+const COL_TIPS = {
+  "Recovery %":"Cash recovered ÷ balance at placement, over a rolling window.",
+  "Yield vs exp.":"Actual payment ÷ expected payment for the vendor's inventory mix.",
+  "Cost to collect":"Vendor fees ÷ cash recovered.",
+  "Net yield":"Recovery net of cost to collect.",
+  "Cash (12mo)":"Cash recoveries attributed to the vendor over the trailing 12 months.",
+  "Fee structure":"Contracted fee model: contingency %, flat, finder, or hybrid.",
+  "Strength / weakness":"Account types the vendor is good or bad at (normalized strategy view).",
+  "Signal":"Performance vs. the vendor's normalized expectation (on track / watch / below).",
+  "A/R Valuator grade":"Bond-rating-style liquidity grade from the A/R Valuator (Apex) engine.",
+  "Liquidity":"Relative ease of collection for the grade.",
+  "% held externally":"Share of the grade's balance currently placed with vendors.",
+  "Strategy signal":"Whether the grade should be retained internally or is appropriate to outsource.",
+  "Billed":"Fee amount billed by the vendor on the line.",
+  "Actual coll.":"Actual posted collection attributable to the vendor for the account.",
+  "Classification":"Validation / reconciliation outcome for the row.",
+  "Evidence":"Supporting detail behind the result.",
+  "Action":"Recommended disposition: auto-validated, escalate, or dispute.",
+  "$ Exposure":"Dollar value at risk for the mismatch class.",
+  "Accounts":"Count of accounts in the classification.",
+  "Recommended action":"Suggested resolution per account or row.",
+  "$ Impact":"Estimated dollar impact of the risk.",
+  "Recommended intervention":"Suggested action to address the risk.",
+  "Vendor":"Vendor associated with the row."
+};
+function applyTips(){
+  const content = document.getElementById("content");
+  content.querySelectorAll(".kpi .lbl").forEach(lbl=>{
+    const txt = lbl.textContent.trim();
+    for(const k in METRIC_TIPS){
+      if(txt.startsWith(k)){
+        const tile = lbl.closest(".kpi"); if(tile) tile.title = METRIC_TIPS[k];
+        if(!lbl.querySelector(".i")) lbl.insertAdjacentHTML("beforeend",' <span class="i">i</span>');
+        break;
+      }
+    }
+  });
+  content.querySelectorAll("th").forEach(th=>{
+    const txt = th.textContent.trim();
+    if(COL_TIPS[txt]){
+      th.title = COL_TIPS[txt];
+      if(!th.querySelector(".i")) th.insertAdjacentHTML("beforeend",' <span class="i">i</span>');
+    }
+  });
+}
 function render(){
   clearCharts();
   renderRoles(); renderNav();
   const r = RENDER[state.page];
   document.getElementById("content").innerHTML = r.html();
+  applyTips();
   if(r.draw) setTimeout(r.draw,10);
   window.scrollTo(0,0);
 }
