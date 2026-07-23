@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VisiQuate VMA — Analytics Framework &amp; Design Specification</title>
+<title>VisiQuate IVM — Analytics Framework &amp; Design Specification</title>
 <style>
   :root{
     --bg:#f0f2f5;--panel:#fff;--ink:#1a1a1a;--muted:#6b7280;--line:#e2e4e8;
@@ -79,8 +79,8 @@
 </head>
 <body>
 <div class="hero"><div class="wrap">
-  <div class="logo">Visi<span>Quate</span> · VMA</div>
-  <h1>Vendor Management Analytics</h1>
+  <div class="logo">Visi<span>Quate</span> · IVM</div>
+  <h1>Intelligent Vendor Management</h1>
   <div class="sub">Analytics Framework &amp; Design Specification · Draft v1.0 · July 17, 2026 · Prepared by Ashwini Grisko</div>
   <div class="stat-row">
     <div class="stat"><b>4</b><span>roles</span></div>
@@ -97,10 +97,10 @@
 <section>
   <h2>Framework Overview</h2>
   <div class="sec-title">An independent, data-driven way to oversee revenue-cycle outsource vendors</div>
-  <div class="sec-desc">VMA answers three questions about every vendor from the client's own authoritative account, payment, and placement data: are they recouping payment effectively, at an acceptable cost to collect, and invoicing accurately for the accounts they actually hold? It is a backend analytics solution delivered through any front end (Concerto, standalone web app, or Ana), operating independently of source systems during daily use. Epic (or the comparable patient-accounting system) is the source of truth; every vendor claim is validated against it.</div>
+  <div class="sec-desc">IVM answers three questions about every vendor from the client's own authoritative account, payment, and placement data: are they recouping payment effectively, at an acceptable cost to collect, and invoicing accurately for the accounts they actually hold? It is a backend analytics solution delivered through any front end (Concerto, standalone web app, or Ana), operating independently of source systems during daily use. Epic (or the comparable patient-accounting system) is the source of truth; every vendor claim is validated against it.</div>
   <div class="scope">
-    <h3>Scope boundary — VMA vs. WPA</h3>
-    <p>VMA evaluates the <b>vendor relationship</b>: collections, cost, yield, inventory accuracy, and invoice integrity. It does <b>not</b> measure the individual workflow productivity of vendor staff — touch rates, time-to-first-touch, note quality, per-user output all belong to Workforce Performance Analytics (WPA). This wall is maintained throughout the product. A client who wants to monitor vendor-staff productivity buys the WPA vendor add-on and feeds vendor activity data into it.</p>
+    <h3>Scope boundary — IVM vs. WPA</h3>
+    <p>IVM evaluates the <b>vendor relationship</b>: collections, cost, yield, inventory accuracy, and invoice integrity. It does <b>not</b> measure the individual workflow productivity of vendor staff — touch rates, time-to-first-touch, note quality, per-user output all belong to Workforce Performance Analytics (WPA). This wall is maintained throughout the product. A client who wants to monitor vendor-staff productivity buys the WPA vendor add-on and feeds vendor activity data into it.</p>
   </div>
 </section>
 
@@ -124,7 +124,7 @@
     <div class="compcard"><span class="badge">Intelligence + Automation</span><span class="badge req">Required</span><h3>1 · Vendor Inventory &amp; Reconciliation</h3><p>Complete view of all accounts placed across all vendors, plus automated reconciliation flagging accounts missing from vendor files, in files but unassigned, closed/paid internally but still active, duplicate placements, and recalled-but-worked. Account-level exception reporting supports operational cleanup and invoice disputes.</p></div>
     <div class="compcard"><span class="badge">Intelligence</span><span class="badge req">Required</span><h3>2 · Vendor Performance (Collections, Cost &amp; Yield)</h3><p>Per-vendor scorecards on recovery rate, payment yield vs. expected, cost to collect, net yield, and cash recoveries over a rolling window. Comparison is normalized for account complexity (payer mix, balance band, placement age, A/R Valuator grade). Touch-based productivity is explicitly excluded.</p></div>
     <div class="compcard"><span class="badge">Intelligence + Automation</span><span class="badge req">Required</span><h3>3 · Invoice Validation &amp; Fee Validation</h3><p>The largest gap and primary product driver. Each invoice line is compared against actual collections, placement/recall status, contingency terms, and contract bill rate. Payment attribution traces each payment to placement context for multi-vendor and vendor-plus-internal splits. Fee leakage analytics quantify dollars paid on accounts that likely would have paid internally.</p></div>
-    <div class="compcard"><span class="badge">ML + Intelligence</span><span class="badge req">Required</span><h3>4 · Placement Strategy (A/R Valuator)</h3><p>Surfaces A/R Valuator liquidity scores and bond-rating-style buckets at the account level, grouped by aging and balance. Performance-by-bucket shows how each vendor performs within each grade; a high-liquidity-placed-externally report flags accounts that should be retained internally. VMA informs placement; it does not automate it.</p></div>
+    <div class="compcard"><span class="badge">ML + Intelligence</span><span class="badge req">Required</span><h3>4 · Placement Strategy (A/R Valuator)</h3><p>Surfaces A/R Valuator liquidity scores and bond-rating-style buckets at the account level, grouped by aging and balance. Performance-by-bucket shows how each vendor performs within each grade; a high-liquidity-placed-externally report flags accounts that should be retained internally. IVM informs placement; it does not automate it.</p></div>
     <div class="compcard"><span class="badge">Intelligence + Workflow</span><span class="badge req">Required</span><h3>5 · Exception-Based Alerting</h3><p>A prebuilt alert library. Each alert carries a recommended action, owner, due date, impacted accounts, and supporting evidence; outcomes are tracked to see whether intervention improved cash or resolution.</p></div>
     <div class="compcard"><span class="badge">Configuration + Alerting</span><span class="badge req">Required</span><h3>6 · Contract Database</h3><p>A standard contract-terms repository across all vendors (fee structure, rates, effective dates, guarantees) that drives fee validation and inventory-vs-contract checks, with alerts on approaching renewal and termination-notice windows and identification of bad terms to renegotiate.</p></div>
   </div>
@@ -301,10 +301,10 @@
 <section>
   <h2>Packaging</h2>
   <div class="sec-title">Component → configuration mapping</div>
-  <div class="sec-desc">Core VMA includes all six Gate 1 components. WPA-specific requests (vendor-staff productivity) are owned separately and are out of core VMA scope.</div>
+  <div class="sec-desc">Core IVM includes all six Gate 1 components. WPA-specific requests (vendor-staff productivity) are owned separately and are out of core IVM scope.</div>
   <div class="tbl-wrap">
   <table>
-    <thead><tr><th>Component</th><th>Standalone VMA</th><th>WPA Vendor Add-on</th><th>Combined</th></tr></thead>
+    <thead><tr><th>Component</th><th>Standalone IVM</th><th>WPA Vendor Add-on</th><th>Combined</th></tr></thead>
     <tbody>
       <tr><td>Vendor Inventory &amp; Reconciliation</td><td><span class="pill pri">Core</span></td><td><span class="pill na">—</span></td><td><span class="pill pri">Core</span></td></tr>
       <tr><td>Vendor Performance (Collections, Cost &amp; Yield)</td><td><span class="pill pri">Core</span></td><td><span class="pill na">—</span></td><td><span class="pill pri">Core</span></td></tr>
@@ -321,7 +321,7 @@
 </div>
 
 <div class="footer">
-  <b>VisiQuate · Vendor Management Analytics</b> — Analytics Framework &amp; Design Specification · Draft v1.0 · July 17, 2026<br>
+  <b>VisiQuate · Intelligent Vendor Management</b> — Analytics Framework &amp; Design Specification · Draft v1.0 · July 17, 2026<br>
   Prepared by Ashwini Grisko · VisiQuate Product Team · Synthetic demo data — no PHI · Pilot/reference client: Emory (code-first build)
 </div>
 </body>

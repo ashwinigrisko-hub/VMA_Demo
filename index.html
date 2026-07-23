@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VisiQuate VMA — Vendor Management Analytics · Live Prototype</title>
+<title>VisiQuate IVM — Intelligent Vendor Management · Live Prototype</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
   :root{
@@ -131,7 +131,7 @@
 <body>
 <header class="topbrand">
   <span class="dot0"></span>
-  <div class="logo">Visi<span>Quate</span> VMA — Vendor Management Analytics</div>
+  <div class="logo">Visi<span>Quate</span> IVM — Intelligent Vendor Management</div>
   <span class="badge">LIVE PROTOTYPE</span><span class="badge syn">SYNTHETIC DATA</span>
   <div class="meta">Demo Health System · Data as of Jul 17, 2026 · nightly ETL 6:00 AM CST · Draft v1.0 · Ashwini Grisko</div>
 </header>
@@ -139,7 +139,7 @@
   <aside class="sidebar">
     <nav class="nav" id="nav"></nav>
     <div class="foot">
-      Vendor Management Analytics<br>Backend analytics · code-first build
+      Intelligent Vendor Management<br>Backend analytics · code-first build
     </div>
   </aside>
 
@@ -307,7 +307,7 @@ function pExecSummary(){
       <tr><td><span class="flag" style="background:var(--red)"></span>Liquid AR placed externally</td><td>Coastal AR Partners</td><td class="num money">${fmt$(412000)}</td><td>Retain 18 AAA/AA accounts internally</td></tr>
       <tr><td><span class="flag" style="background:var(--amber)"></span>Recovery below expected</td><td>Apex Receivables</td><td class="num money">—</td><td>Escalate to QBR — 6.3 pts below normalized</td></tr>
     </tbody></table>
-    <div class="legend"><span>Scope: VMA measures the vendor relationship — collections, cost, yield, inventory accuracy, invoice integrity. Staff productivity belongs to WPA.</span></div>
+    <div class="legend"><span>Scope: IVM measures the vendor relationship — collections, cost, yield, inventory accuracy, invoice integrity. Staff productivity belongs to WPA.</span></div>
   </div>`;
 }
 function drawExec(){
@@ -362,7 +362,7 @@ function drawVendorScorecard(){
 
 function pPlacement(){
   return head("director","Placement Strategy — A/R Valuator",
-    "Use A/R Valuator liquidity scoring (bond-rating-style grades, Apex engine) to decide what to keep in-house vs. outsource, and route account types to the vendors that work them best. VMA informs placement; it does not automate placement or recall.")+
+    "Use A/R Valuator liquidity scoring (bond-rating-style grades, Apex engine) to decide what to keep in-house vs. outsource, and route account types to the vendors that work them best. IVM informs placement; it does not automate placement or recall.")+
   `<div class="banner">◇ <b>Retention flag:</b> ${fmt$(412000)} of AAA/AA (high-liquidity) balance is sitting with vendors at contingency rates — strong candidates to retain internally.</div>
   <div class="card full"><h3>Liquidity buckets — what to keep vs. outsource</h3>
   <table><thead><tr><th>A/R Valuator grade</th><th>Liquidity</th><th class="num">Balance</th><th>% held externally</th><th>Strategy signal</th></tr></thead><tbody>
@@ -529,9 +529,9 @@ const RENDER = {
 /* ---------------- Rich info popovers ---------------- */
 const DEMO = "Synthetic demo data — illustrative only.";
 const INFO = {
-  "Total AR placed":{def:"Total open accounts-receivable balance the client has placed with outside collection vendors, across all vendors and facilities.",calc:"Sum of current balance for every account with an active vendor placement (placement file joined to client A/R).",purpose:"Sizes the outsourced book VMA governs and anchors every vendor rate as a share of a comparable base.",interpret:"A rising figure means more AR is being outsourced; read it alongside net yield to confirm outsourcing is paying off.",guidance:"If placed AR grows while net yield falls, revisit placement strategy before adding volume.",data:"Vendor placement files + client A/R (Epic), nightly ETL. "+DEMO},
+  "Total AR placed":{def:"Total open accounts-receivable balance the client has placed with outside collection vendors, across all vendors and facilities.",calc:"Sum of current balance for every account with an active vendor placement (placement file joined to client A/R).",purpose:"Sizes the outsourced book IVM governs and anchors every vendor rate as a share of a comparable base.",interpret:"A rising figure means more AR is being outsourced; read it alongside net yield to confirm outsourcing is paying off.",guidance:"If placed AR grows while net yield falls, revisit placement strategy before adding volume.",data:"Vendor placement files + client A/R (Epic), nightly ETL. "+DEMO},
   "Cash recovered (period)":{def:"Payments posted during the period on accounts that were placed with a vendor.",calc:"Sum of payment transactions where the account was in a vendor's inventory at the posting date (attribution applied).",purpose:"Measures the actual dollars the vendor program returned this period — the numerator of recovery and yield.",interpret:"Compare against placed balance and prior periods; a drop with flat placement signals vendor under-performance.",guidance:"Investigate any vendor whose share of cash lags its share of placed balance.",data:"Client A/R (Epic) postings + placement attribution. "+DEMO},
-  "Fee leakage identified":{def:"Dollars billed by vendors that fee validation flagged as overbilled, unsupported by activity, billed on recalled accounts, or paid on accounts that likely would have collected internally.",calc:"Sum of fee variance across invoice lines whose validation result is an exception (billed amount minus contract-allowed fee).",purpose:"The headline ROI mechanism of VMA — quantifies recoverable dollars leaking to vendors.",interpret:"Flagged, not yet recovered; realized value depends on disputing and winning. Concentration by vendor shows where to act first.",guidance:"Prioritize disputes by dollar value and evidence strength; feed recurring patterns back into contract terms.",data:"Vendor invoices validated against collections, placement, and contract. "+DEMO},
+  "Fee leakage identified":{def:"Dollars billed by vendors that fee validation flagged as overbilled, unsupported by activity, billed on recalled accounts, or paid on accounts that likely would have collected internally.",calc:"Sum of fee variance across invoice lines whose validation result is an exception (billed amount minus contract-allowed fee).",purpose:"The headline ROI mechanism of IVM — quantifies recoverable dollars leaking to vendors.",interpret:"Flagged, not yet recovered; realized value depends on disputing and winning. Concentration by vendor shows where to act first.",guidance:"Prioritize disputes by dollar value and evidence strength; feed recurring patterns back into contract terms.",data:"Vendor invoices validated against collections, placement, and contract. "+DEMO},
   "Invoice validation rate":{def:"Share of vendor invoice line items automatically validated against collections, placement/recall status, and contract terms without manual review.",calc:"Auto-validated lines divided by total invoice lines for the cycle.",purpose:"Measures how much of the invoice-audit workload is automated — the core efficiency metric of the product.",interpret:"Higher is better; the gap from 100% is the manual exception queue.",guidance:"Target 85%+ at go-live and 95%+ by 90 days; persistent low rates usually trace to a vendor's non-standard invoice format.",data:"Invoice audit engine. "+DEMO},
   "Inventory match rate":{def:"Share of accounts that reconcile cleanly between the vendor's reported inventory and the client's own inventory file.",calc:"Matched accounts divided by total accounts reconciled, with client A/R as the source of truth.",purpose:"Confirms you know which accounts each vendor truly holds — the basis for trustworthy invoicing and placement.",interpret:"Below target means material mismatches (closed-but-active, duplicates, stale placements) that carry dollar exposure.",guidance:"Target 90%+ after the reconciliation pass; work the mismatch worklist by exposure.",data:"Paired vendor + client inventory files, monthly/bimonthly. "+DEMO},
   "Blended net yield":{def:"Recovery rate net of cost to collect, blended across all vendors.",calc:"Balance-weighted average of each vendor's (recovery % minus cost-to-collect %).",purpose:"Single portfolio-level read on whether outsourcing is economically productive.",interpret:"Rising net yield means better economics; a decline despite steady recovery points to rising fees.",guidance:"Use to set overall outsource-vs-retain posture; drill to the vendor scorecard for drivers.",data:"Performance model (collections and fees). "+DEMO},
@@ -551,7 +551,7 @@ const INFO = {
   "Fee structure":{def:"The contracted fee model the vendor bills under.",calc:"From the contract database: contingency %, flat, finder fee, or hybrid.",interpret:"The fee model determines which validation checks apply (activity-required flags apply to contingency, not flat).",data:"Contract database. "+DEMO},
   "Recovery %":{def:"Share of placed balance the vendor has collected over a rolling window.",calc:"Cash recovered divided by balance at placement.",interpret:"Compare on the normalized (complexity-adjusted) basis, not raw — a vendor holding hard inventory shows a lower raw rate.",guidance:"Rates below the vendor's normalized expectation warrant a QBR conversation.",data:"Placement + A/R postings. "+DEMO},
   "Yield vs exp.":{def:"Actual payment relative to the payment expected for the vendor's inventory mix.",calc:"Actual payment divided by expected payment (expected derived from payer, balance, age, and grade mix).",interpret:"Above 100% is out-performing the mix; a sustained drop vs. baseline triggers a yield-drop alert.",data:"Performance model. "+DEMO},
-  "Cost to collect":{def:"What it costs to collect through this vendor, as a share of dollars recovered.",calc:"Vendor fees divided by cash recovered.",interpret:"Lower is better; read alongside recovery — a high recovery rate can still be a poor deal if cost to collect is high.",data:"Invoices + A/R. Open question: computed by VMA vs. sourced from client (Gate 6). "+DEMO},
+  "Cost to collect":{def:"What it costs to collect through this vendor, as a share of dollars recovered.",calc:"Vendor fees divided by cash recovered.",interpret:"Lower is better; read alongside recovery — a high recovery rate can still be a poor deal if cost to collect is high.",data:"Invoices + A/R. Open question: computed by IVM vs. sourced from client (Gate 6). "+DEMO},
   "Net yield":{def:"Recovery rate net of the cost to collect.",calc:"Recovery % minus cost-to-collect %.",interpret:"The bottom-line economics per vendor and the primary basis for ranking vendors fairly.",data:"Performance model. "+DEMO},
   "Cash (12mo)":{def:"Cash recoveries attributed to the vendor over the trailing twelve months.",calc:"Sum of attributed payments over the rolling 12-month window.",interpret:"Absolute contribution; pair with net yield so volume is not mistaken for efficiency.",data:"A/R postings + attribution. "+DEMO},
   "Strength / weakness":{def:"The account types a vendor performs well or poorly on.",calc:"Derived from performance-by-bucket analysis across payer, balance, age, and liquidity grade.",interpret:"Guides which inventory to route to which vendor rather than treating vendors as interchangeable.",data:"Vendor strategy scorecard. "+DEMO},
