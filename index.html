@@ -60,8 +60,21 @@
   .kpi .sub{font-size:10.5px;color:var(--muted);margin-top:2px}
   .tag{font-size:8.5px;font-weight:700;padding:2px 6px;border-radius:4px;vertical-align:middle}
   .tag.av{background:#e6f6ef;color:#059669} .tag.src{background:#f1f5f9;color:#475569}
-  .i{display:inline-block;margin-left:4px;width:13px;height:13px;line-height:13px;text-align:center;font-size:9px;font-weight:800;font-style:normal;text-transform:none;letter-spacing:0;color:#fff;background:var(--muted2);border-radius:50%;cursor:help;vertical-align:middle}
-  th .i{background:#aab2bf}
+  .i{display:inline-block;margin-left:4px;width:14px;height:14px;line-height:14px;text-align:center;font-size:9.5px;font-weight:800;font-style:normal;text-transform:none;letter-spacing:0;color:#fff;background:var(--muted2);border-radius:50%;cursor:pointer;vertical-align:middle}
+  .i:hover{background:var(--brand)}
+  th .i{background:#aab2bf} th .i:hover{background:var(--brand)}
+  /* Info popover */
+  .pop-back{position:fixed;inset:0;z-index:99}
+  .pop{position:fixed;z-index:100;width:372px;max-width:92vw;max-height:82vh;overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 48px rgba(15,23,42,.26)}
+  .pop-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff}
+  .pop-h span{font-weight:750;font-size:14.5px;color:var(--navy)}
+  .pop-h .x{border:0;background:transparent;font-size:21px;line-height:1;color:var(--muted2);cursor:pointer;padding:0 2px}
+  .pop-h .x:hover{color:var(--ink)}
+  .pop-b{padding:4px 16px 16px}
+  .pop-b .pl{color:var(--brand);font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;margin-top:13px}
+  .pop-b p{font-size:12px;color:#374151;margin-top:3px;line-height:1.5}
+  .pop-b .dctx{margin-top:14px;border-top:1px dashed var(--line);padding-top:9px}
+  .pop-b .dctx p{color:var(--muted);font-size:11px}
   /* cards / grid */
   .grid{display:grid;gap:16px}
   .g2{grid-template-columns:1fr 1fr}
@@ -513,73 +526,84 @@ const RENDER = {
   "inventory-recon":{html:pInventoryRecon,draw:drawInventoryRecon},
   "account-deep-dive":{html:pAccountDeepDive,draw:null}
 };
-/* ---------------- Hover info tooltips ---------------- */
-const METRIC_TIPS = {
-  "Total AR placed":"Total open AR balance placed across all vendors. Source: vendor placement files.",
-  "Cash recovered":"Payments posted on vendor-placed accounts during the period. Source: client A/R (Epic).",
-  "Fee leakage identified":"Dollars flagged as overbilled, unsupported, or recoverable-internal by fee validation — recoverable on dispute.",
-  "Invoice validation rate":"% of vendor invoice line items auto-validated without manual intervention. Target ≥85% at go-live, ≥95% at 90 days.",
-  "Inventory match rate":"Matched accounts ÷ total reconciled between the vendor and client inventory files. Target ≥90% after the reconciliation pass.",
-  "Blended net yield":"Recovery rate net of cost to collect, blended across all vendors.",
-  "Active alerts":"Open exception alerts across the vendor portfolio.",
-  "$ at risk":"Total dollar exposure across all open alerts.",
-  "High-severity due":"High-severity alerts with a recommended action due within 7 days.",
-  "Resolved this period":"Alerts resolved this period; badge shows the share closed within SLA.",
-  "Lines auto-validated":"Invoice line items that passed automated validation vs. total lines this cycle.",
-  "Open exceptions":"Invoice lines that failed auto-validation and await analyst review.",
-  "Accounts reconciled":"Total accounts compared across the paired vendor and client inventory files.",
-  "Mismatches flagged":"Accounts classified as missing, unassigned, closed-but-active, duplicate, or recalled-but-worked.",
-  "Duplicate placements":"Accounts appearing in more than one vendor inventory file at the same time.",
-  "A/R Valuator grade":"Bond-rating-style liquidity grade from the A/R Valuator (Apex) engine, run nightly in ETL.",
-  "Attribution":"The vendor the account and its payments are attributed to, per the client's attribution logic.",
-  "Balance":"Current open balance vs. balance at placement.",
-  "Account":"Selected account identifier, financial class, and facility."
-};
-const COL_TIPS = {
-  "Recovery %":"Cash recovered ÷ balance at placement, over a rolling window.",
-  "Yield vs exp.":"Actual payment ÷ expected payment for the vendor's inventory mix.",
-  "Cost to collect":"Vendor fees ÷ cash recovered.",
-  "Net yield":"Recovery net of cost to collect.",
-  "Cash (12mo)":"Cash recoveries attributed to the vendor over the trailing 12 months.",
-  "Fee structure":"Contracted fee model: contingency %, flat, finder, or hybrid.",
-  "Strength / weakness":"Account types the vendor is good or bad at (normalized strategy view).",
-  "Signal":"Performance vs. the vendor's normalized expectation (on track / watch / below).",
-  "A/R Valuator grade":"Bond-rating-style liquidity grade from the A/R Valuator (Apex) engine.",
-  "Liquidity":"Relative ease of collection for the grade.",
-  "% held externally":"Share of the grade's balance currently placed with vendors.",
-  "Strategy signal":"Whether the grade should be retained internally or is appropriate to outsource.",
-  "Billed":"Fee amount billed by the vendor on the line.",
-  "Actual coll.":"Actual posted collection attributable to the vendor for the account.",
-  "Classification":"Validation / reconciliation outcome for the row.",
-  "Evidence":"Supporting detail behind the result.",
-  "Action":"Recommended disposition: auto-validated, escalate, or dispute.",
-  "$ Exposure":"Dollar value at risk for the mismatch class.",
-  "Accounts":"Count of accounts in the classification.",
-  "Recommended action":"Suggested resolution per account or row.",
-  "$ Impact":"Estimated dollar impact of the risk.",
-  "Recommended intervention":"Suggested action to address the risk.",
-  "Vendor":"Vendor associated with the row."
+/* ---------------- Rich info popovers ---------------- */
+const DEMO = "Synthetic demo data — illustrative only.";
+const INFO = {
+  "Total AR placed":{def:"Total open accounts-receivable balance the client has placed with outside collection vendors, across all vendors and facilities.",calc:"Sum of current balance for every account with an active vendor placement (placement file joined to client A/R).",purpose:"Sizes the outsourced book VMA governs and anchors every vendor rate as a share of a comparable base.",interpret:"A rising figure means more AR is being outsourced; read it alongside net yield to confirm outsourcing is paying off.",guidance:"If placed AR grows while net yield falls, revisit placement strategy before adding volume.",data:"Vendor placement files + client A/R (Epic), nightly ETL. "+DEMO},
+  "Cash recovered (period)":{def:"Payments posted during the period on accounts that were placed with a vendor.",calc:"Sum of payment transactions where the account was in a vendor's inventory at the posting date (attribution applied).",purpose:"Measures the actual dollars the vendor program returned this period — the numerator of recovery and yield.",interpret:"Compare against placed balance and prior periods; a drop with flat placement signals vendor under-performance.",guidance:"Investigate any vendor whose share of cash lags its share of placed balance.",data:"Client A/R (Epic) postings + placement attribution. "+DEMO},
+  "Fee leakage identified":{def:"Dollars billed by vendors that fee validation flagged as overbilled, unsupported by activity, billed on recalled accounts, or paid on accounts that likely would have collected internally.",calc:"Sum of fee variance across invoice lines whose validation result is an exception (billed amount minus contract-allowed fee).",purpose:"The headline ROI mechanism of VMA — quantifies recoverable dollars leaking to vendors.",interpret:"Flagged, not yet recovered; realized value depends on disputing and winning. Concentration by vendor shows where to act first.",guidance:"Prioritize disputes by dollar value and evidence strength; feed recurring patterns back into contract terms.",data:"Vendor invoices validated against collections, placement, and contract. "+DEMO},
+  "Invoice validation rate":{def:"Share of vendor invoice line items automatically validated against collections, placement/recall status, and contract terms without manual review.",calc:"Auto-validated lines divided by total invoice lines for the cycle.",purpose:"Measures how much of the invoice-audit workload is automated — the core efficiency metric of the product.",interpret:"Higher is better; the gap from 100% is the manual exception queue.",guidance:"Target 85%+ at go-live and 95%+ by 90 days; persistent low rates usually trace to a vendor's non-standard invoice format.",data:"Invoice audit engine. "+DEMO},
+  "Inventory match rate":{def:"Share of accounts that reconcile cleanly between the vendor's reported inventory and the client's own inventory file.",calc:"Matched accounts divided by total accounts reconciled, with client A/R as the source of truth.",purpose:"Confirms you know which accounts each vendor truly holds — the basis for trustworthy invoicing and placement.",interpret:"Below target means material mismatches (closed-but-active, duplicates, stale placements) that carry dollar exposure.",guidance:"Target 90%+ after the reconciliation pass; work the mismatch worklist by exposure.",data:"Paired vendor + client inventory files, monthly/bimonthly. "+DEMO},
+  "Blended net yield":{def:"Recovery rate net of cost to collect, blended across all vendors.",calc:"Balance-weighted average of each vendor's (recovery % minus cost-to-collect %).",purpose:"Single portfolio-level read on whether outsourcing is economically productive.",interpret:"Rising net yield means better economics; a decline despite steady recovery points to rising fees.",guidance:"Use to set overall outsource-vs-retain posture; drill to the vendor scorecard for drivers.",data:"Performance model (collections and fees). "+DEMO},
+  "Active alerts":{def:"Open exception alerts currently firing across the vendor portfolio from the prebuilt alert library.",calc:"Count of alerts in open status (not yet resolved or suppressed).",purpose:"The daily worklist of vendor-management exceptions needing an owner and action.",interpret:"Severity mix matters more than count; a few high-severity items outweigh many informational ones.",guidance:"Clear high-severity first; track resolution rate to confirm the program acts on what it surfaces.",data:"Alert engine across all feeds. "+DEMO},
+  "$ at risk / flagged":{def:"Total dollar exposure represented by the accounts across all open alerts.",calc:"Sum of impacted-account balances (or flagged fee dollars) across open alerts.",purpose:"Prioritizes attention by money at stake rather than alert count.",interpret:"A few high-dollar alerts can dominate; sort the alert list by value.",guidance:"Escalate the largest-exposure alerts to a named owner with a due date.",data:"Alerts joined to A/R and invoices. "+DEMO},
+  "High-severity due ≤7d":{def:"High-severity alerts whose recommended action is due within the next seven days.",calc:"Count of open alerts with severity High and a due date within 7 days.",purpose:"Focuses the team on time-sensitive, high-impact items (disputes, recalls, SLA breaches).",interpret:"A growing number signals the team is falling behind on the most important work.",guidance:"Staff to keep this near zero; overflow is a capacity or process signal.",data:"Alert engine. "+DEMO},
+  "Resolved this period":{def:"Alerts closed during the period, with the share closed inside the service-level window.",calc:"Count of alerts moved to resolved; SLA % = resolved-within-SLA divided by resolved.",purpose:"Shows the program is not just surfacing exceptions but acting on and closing them.",interpret:"High volume with low SLA % means items resolve late; low volume may mean a backlog.",guidance:"Track both together; a healthy program shows steady closes at high SLA compliance.",data:"Alert outcome tracking (Phase 2). "+DEMO},
+  "Lines auto-validated":{def:"Vendor invoice line items that passed automated validation this cycle, out of the total lines received.",calc:"Auto-validated line count divided by total line count for the cycle.",purpose:"The raw workload automation behind the invoice validation rate.",interpret:"The remainder is the exception queue analysts must review.",guidance:"If the manual remainder is large for one vendor, pursue invoice-format normalization.",data:"Invoice audit engine. "+DEMO},
+  "Open exceptions":{def:"Invoice lines that failed automated validation and await analyst review (approve, dispute, or escalate).",calc:"Count and dollar sum of lines with an open exception validation result.",purpose:"The actionable dispute pipeline where fee leakage is recovered.",interpret:"Dollar value matters more than count; a few high-dollar overbills are the priority.",guidance:"Work exceptions by value and evidence strength; document outcomes for the dispute record.",data:"Invoice audit exceptions. "+DEMO},
+  "Accounts reconciled":{def:"Total accounts compared this cycle across the paired vendor and client inventory files.",calc:"Count of accounts present in either file and evaluated by the reconciliation.",purpose:"The denominator behind inventory match rate and mismatch counts.",interpret:"Should track the size of the outsourced book; a sudden drop hints at a missing or late file.",guidance:"Confirm both files arrived at matched cadence before trusting the match rate.",data:"Vendor + client inventory files. "+DEMO},
+  "Mismatches flagged":{def:"Accounts that did not reconcile, classified as missing, unassigned, closed-but-active, duplicate, or recalled-but-worked.",calc:"Count of accounts with a non-matched reconciliation result, each with a recommended action.",purpose:"Surfaces operational cleanup and invoice-dispute opportunities.",interpret:"Closed-but-active and payment-without-activity classes usually carry the most dollar exposure.",guidance:"Route each class to its recommended action (recall, reassign, dispute) and track to closure.",data:"Inventory reconciliation. "+DEMO},
+  "Duplicate placements":{def:"Accounts appearing in more than one vendor's inventory at the same time.",calc:"Count of accounts found in two or more vendor inventory files after cross-vendor de-duplication.",purpose:"Prevents paying two vendors for the same account and double-working inventory.",interpret:"Any non-zero value is worth resolving; dollars can be small but the fee risk is real.",guidance:"Confirm the true holder, recall from the other, and dispute any overlapping fees.",data:"Cross-vendor inventory match. "+DEMO},
+  "Account":{def:"The account currently in focus, with its financial class and facility.",calc:"Identifier drawn from the client A/R system.",purpose:"Anchors the deep-dive to a single claim's full vendor lifecycle.",data:"Client A/R (Epic), PHI-governed. "+DEMO},
+  "Balance":{def:"Current open balance on the account versus its balance at placement.",calc:"Current balance now vs. balance at placement from the placement file.",purpose:"Shows how much has been collected and how much remains at risk.",interpret:"A large gap between placement and current balance indicates progress; little movement signals a stall.",data:"Client A/R + placement file. "+DEMO},
+  "A/R Valuator grade":{def:"Bond-rating-style liquidity grade (AAA to B) assigned per account by the A/R Valuator (Apex) engine.",calc:"Weighted liquidity score from balance, age, payer, and denial signals, bucketed into letter grades; runs nightly in ETL.",purpose:"Drives placement strategy — what to keep in-house vs. outsource — and normalizes vendor comparison.",interpret:"AAA/AA are highly collectible and usually should be retained; B/BB are hard inventory better suited to specialist vendors.",guidance:"Flag high-grade balance sitting with vendors for retention; route low-grade inventory to the vendor that works it best.",data:"A/R Valuator (Apex), Etyon. Some accounts may show no grade (engineering item). "+DEMO},
+  "Attribution":{def:"Which vendor (or internal team) an account and its payments are credited to.",calc:"Derived per client from Epic work queues, billing indicator, agency assignment, or algorithmic transaction-matching.",purpose:"The foundation for fair vendor comparison, payment splits, and invoice validation.",interpret:"Attribution reliability is the biggest cross-client variable; low confidence undermines every downstream metric.",guidance:"Validate attribution fields during onboarding; treat unattributed payments as a data-quality alert.",data:"Client A/R + configured attribution logic. "+DEMO},
+  "Fee structure":{def:"The contracted fee model the vendor bills under.",calc:"From the contract database: contingency %, flat, finder fee, or hybrid.",interpret:"The fee model determines which validation checks apply (activity-required flags apply to contingency, not flat).",data:"Contract database. "+DEMO},
+  "Recovery %":{def:"Share of placed balance the vendor has collected over a rolling window.",calc:"Cash recovered divided by balance at placement.",interpret:"Compare on the normalized (complexity-adjusted) basis, not raw — a vendor holding hard inventory shows a lower raw rate.",guidance:"Rates below the vendor's normalized expectation warrant a QBR conversation.",data:"Placement + A/R postings. "+DEMO},
+  "Yield vs exp.":{def:"Actual payment relative to the payment expected for the vendor's inventory mix.",calc:"Actual payment divided by expected payment (expected derived from payer, balance, age, and grade mix).",interpret:"Above 100% is out-performing the mix; a sustained drop vs. baseline triggers a yield-drop alert.",data:"Performance model. "+DEMO},
+  "Cost to collect":{def:"What it costs to collect through this vendor, as a share of dollars recovered.",calc:"Vendor fees divided by cash recovered.",interpret:"Lower is better; read alongside recovery — a high recovery rate can still be a poor deal if cost to collect is high.",data:"Invoices + A/R. Open question: computed by VMA vs. sourced from client (Gate 6). "+DEMO},
+  "Net yield":{def:"Recovery rate net of the cost to collect.",calc:"Recovery % minus cost-to-collect %.",interpret:"The bottom-line economics per vendor and the primary basis for ranking vendors fairly.",data:"Performance model. "+DEMO},
+  "Cash (12mo)":{def:"Cash recoveries attributed to the vendor over the trailing twelve months.",calc:"Sum of attributed payments over the rolling 12-month window.",interpret:"Absolute contribution; pair with net yield so volume is not mistaken for efficiency.",data:"A/R postings + attribution. "+DEMO},
+  "Strength / weakness":{def:"The account types a vendor performs well or poorly on.",calc:"Derived from performance-by-bucket analysis across payer, balance, age, and liquidity grade.",interpret:"Guides which inventory to route to which vendor rather than treating vendors as interchangeable.",data:"Vendor strategy scorecard. "+DEMO},
+  "Signal":{def:"Whether the vendor is performing on, near, or below its normalized expectation.",calc:"Compares actual recovery/yield to the expectation for the vendor's inventory mix; thresholds set the on-track / watch / below status.",interpret:"'Below expected' is the trigger to investigate or escalate, independent of the raw rate.",data:"Normalized comparison model. "+DEMO},
+  "Liquidity":{def:"How collectible the accounts in a grade are.",calc:"Descriptive label for the A/R Valuator grade band.",interpret:"Higher liquidity means easier to collect internally, so less reason to pay a contingency fee.",data:"A/R Valuator (Apex). "+DEMO},
+  "% held externally":{def:"Share of a liquidity grade's balance currently placed with vendors rather than retained in-house.",calc:"Externally-placed balance in the grade divided by total balance in the grade.",interpret:"A high external share of high-liquidity grades is the classic over-outsourcing pattern to correct.",data:"Placement files + A/R Valuator. "+DEMO},
+  "Strategy signal":{def:"The recommended posture for a liquidity grade — retain internally or outsource.",calc:"Rule on grade plus external share (e.g., AAA/AA flagged retain).",interpret:"'Retain internally' on a high-grade row is a direct instruction to pull that balance back.",data:"Placement strategy logic. "+DEMO},
+  "Billed":{def:"The fee amount the vendor billed on this invoice line.",calc:"Billed amount from the vendor invoice.",interpret:"Compared against actual collection times contract rate; a gap is a leakage flag.",data:"Vendor invoice. "+DEMO},
+  "Actual coll.":{def:"The actual posted collection attributable to the vendor for this account.",calc:"Attributed payment from client A/R for the account and period.",interpret:"The truth the invoice is audited against; billed above this is an overbill.",data:"Client A/R + attribution. "+DEMO},
+  "Classification":{def:"The validation or reconciliation outcome assigned to the row.",calc:"Rules over collection, placement/recall, activity, and contract rate (invoice) or file comparison (inventory).",interpret:"Any row that is not Validated or Matched is an actionable exception.",data:"Audit / reconciliation engine. "+DEMO},
+  "Evidence":{def:"The supporting detail behind the row's result.",calc:"Assembled from the transactions, placement, and contract records that drove the flag.",interpret:"This is what backs a dispute; stronger evidence means a more winnable dispute.",data:"Multiple feeds. "+DEMO},
+  "Action":{def:"The recommended disposition for the line.",calc:"Derived from the classification (auto-validated, escalate, or dispute).",interpret:"Drives the analyst worklist; disputes carry the recoverable dollars.",data:"Audit engine. "+DEMO},
+  "$ Exposure":{def:"Dollar value at risk for the mismatch classification.",calc:"Sum of balances of the accounts in that mismatch class.",interpret:"Rank cleanup work by exposure, not account count.",data:"Reconciliation + A/R. "+DEMO},
+  "Accounts":{def:"Count of accounts in the classification.",calc:"Number of accounts assigned to the row's category.",interpret:"Read with exposure — many low-dollar accounts may matter less than a few high-dollar ones.",data:"Reconciliation. "+DEMO},
+  "Recommended action":{def:"The suggested resolution for the accounts in the row.",calc:"Mapped from the mismatch or exception type (recall, reassign, dispute, investigate).",interpret:"Each action has an owner and is tracked to closure.",data:"Reconciliation / alert logic. "+DEMO},
+  "$ Impact":{def:"Estimated dollar impact of the risk on program value.",calc:"Exposure or recoverable dollars tied to the risk driver.",interpret:"Ranks the executive risk list by money at stake.",data:"Multiple feeds. "+DEMO},
+  "Recommended intervention":{def:"The suggested action to address the risk.",calc:"Mapped from the risk type to a play (dispute, recall, retain, escalate).",interpret:"Turns the risk list into an action plan with clear next steps.",data:"Alert / strategy logic. "+DEMO},
+  "Vendor":{def:"The collection vendor associated with the row.",calc:"From the placement and attribution data.",data:"Placement files. "+DEMO}
 };
 function applyTips(){
   const content = document.getElementById("content");
   content.querySelectorAll(".kpi .lbl").forEach(lbl=>{
-    const txt = lbl.textContent.trim();
-    for(const k in METRIC_TIPS){
-      if(txt.startsWith(k)){
-        const tile = lbl.closest(".kpi"); if(tile) tile.title = METRIC_TIPS[k];
-        if(!lbl.querySelector(".i")) lbl.insertAdjacentHTML("beforeend",' <span class="i">i</span>');
-        break;
-      }
-    }
+    const key = (lbl.firstChild ? lbl.firstChild.textContent : lbl.textContent).trim();
+    if(INFO[key] && !lbl.querySelector(".i")) lbl.insertAdjacentHTML("beforeend",' <span class="i" data-key="'+key.replace(/"/g,"&quot;")+'">i</span>');
   });
   content.querySelectorAll("th").forEach(th=>{
-    const txt = th.textContent.trim();
-    if(COL_TIPS[txt]){
-      th.title = COL_TIPS[txt];
-      if(!th.querySelector(".i")) th.insertAdjacentHTML("beforeend",' <span class="i">i</span>');
-    }
+    const key = th.textContent.trim();
+    if(INFO[key] && !th.querySelector(".i")) th.insertAdjacentHTML("beforeend",' <span class="i" data-key="'+key.replace(/"/g,"&quot;")+'">i</span>');
   });
 }
+function secRow(l,v){ return v ? '<div class="pl">'+l+'</div><p>'+v+'</p>' : ''; }
+function openInfo(key, iconEl){
+  closeInfo();
+  const o = INFO[key]; if(!o) return;
+  const back = document.createElement("div"); back.className="pop-back"; back.onclick=closeInfo;
+  const body = secRow("Definition",o.def)+secRow("Calculation",o.calc)+secRow("Purpose",o.purpose)+
+    secRow("How to interpret",o.interpret)+secRow("Decision guidance",o.guidance)+
+    (o.data ? '<div class="dctx"><div class="pl">Data context</div><p>'+o.data+'</p></div>' : '');
+  const pop = document.createElement("div"); pop.className="pop";
+  pop.innerHTML = '<div class="pop-h"><span>'+key+'</span><button class="x" aria-label="Close">&times;</button></div><div class="pop-b">'+body+'</div>';
+  document.body.appendChild(back); document.body.appendChild(pop);
+  pop.querySelector(".x").onclick=closeInfo;
+  const r = iconEl.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+  let left = r.left-4, top = r.bottom+8;
+  if(left+pw > window.innerWidth-12) left = window.innerWidth-pw-12;
+  if(left < 12) left = 12;
+  if(top+ph > window.innerHeight-12) top = Math.max(12, r.top-ph-8);
+  pop.style.left = left+"px"; pop.style.top = top+"px";
+}
+function closeInfo(){ document.querySelectorAll(".pop,.pop-back").forEach(e=>e.remove()); }
+document.addEventListener("click", e=>{ const i = e.target.closest(".i"); if(i && i.dataset.key){ e.stopPropagation(); openInfo(i.dataset.key, i); } });
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeInfo(); });
 function render(){
   clearCharts();
   renderRoles(); renderNav();
